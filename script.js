@@ -841,6 +841,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initial Load ---
     async function initialize() {
         await loadCategories(); // Load categories first
+        // Clear any existing active categories
+        const activeItems = categoryList.querySelectorAll('li.active');
+        activeItems.forEach(li => li.classList.remove('active'));  
         // Default load: show watch list
         const watchLi = categoryList.querySelector('li[data-id="watchlist"]');
         if (watchLi) {
