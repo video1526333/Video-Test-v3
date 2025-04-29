@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Current video ID (for sharing)
     let currentVideoId = null;
+    // Watch list storage in localStorage
+    let watchList = JSON.parse(localStorage.getItem('watchList') || '[]');
 
     // Password configuration
     const correctPassword = '12345678';
@@ -236,6 +238,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn(`Category ID ${cat.type_id} has null name.`);
             }
         });
+        // Add Watch List option at end of categories
+        const watchLi = document.createElement('li');
+        watchLi.textContent = 'Watch List';
+        watchLi.dataset.id = 'watchlist';
+        categoryList.appendChild(watchLi);
     }
 
     // Function to handle image URLs more robustly
@@ -396,6 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
          
          // Store the current video ID for sharing
          currentVideoId = videoId;
+         // Update Watch List button text based on storage
+         addToWatchListButton.textContent = watchList.includes(currentVideoId) ? 'Remove from Watch List' : 'Add to Watch List';
 
          modalTitle.textContent = video.vod_name || 'No Title';
          // Use more robust image URL handling
@@ -646,7 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const categoryId = event.target.dataset.id;
             searchInput.value = ''; // Clear search input when changing categories
-            loadVideos(1, categoryId, ''); // Load page 1 of the selected category, clear search
+            if (categoryId === 'watchlist') {
+                loadWatchList();
+            } else {
+                loadVideos(1, categoryId, '');
+            }
             
             // Scroll to top when changing categories
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -832,6 +845,61 @@ document.addEventListener('DOMContentLoaded', () => {
             showVideoDetails(videoId);
         }
     }
+
+    // --- Watch List Functions ---
+    async function loadWatchList() {
+        // Render saved videos from watchList
+        videoGrid.innerHTML = '';
+        if (watchList.length === 0) {
+            videoGrid.innerHTML = '<p>No videos in your watch list.</p>';
+            return;
+        }
+        showToast('Loading your watch list...', 'info');
+        const ids = watchList.join(',');
+        const data = await fetchData({ ac: 'detail', ids: ids });
+        if (!data || !data.list) {
+            videoGrid.innerHTML = '<p>Failed to load watch list.</p>';
+            return;
+        }
+        data.list.forEach(video => {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.dataset.id = video.vod_id;
+            const img = document.createElement('img');
+            const validImageUrl = getValidImageUrl(video.vod_pic);
+            img.src = validImageUrl || '';
+            img.alt = video.vod_name || 'No Image';
+            const title = document.createElement('h3');
+            title.textContent = video.vod_name || 'No Title';
+            const remarks = document.createElement('p');
+            remarks.textContent = video.vod_remarks || '';
+            card.appendChild(img);
+            card.appendChild(title);
+            card.appendChild(remarks);
+            videoGrid.appendChild(card);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function toggleWatchList() {
+        if (!currentVideoId) return;
+        const idx = watchList.indexOf(currentVideoId);
+        if (idx === -1) {
+            watchList.push(currentVideoId);
+            showToast('Added to watch list', 'info');
+        } else {
+            watchList.splice(idx, 1);
+            showToast('Removed from watch list', 'info');
+        }
+        localStorage.setItem('watchList', JSON.stringify(watchList));
+        addToWatchListButton.textContent = watchList.includes(currentVideoId) ? 'Remove from Watch List' : 'Add to Watch List';
+    }
+    // Event listeners for Watch List buttons
+    addToWatchListButton.addEventListener('click', toggleWatchList);
+    mobileWatchListButton.addEventListener('click', () => {
+        const currentActive = categoryList.querySelector('.active');
+        if (currentActive) currentActive.classList.remove('active');
+        loadWatchList();
+    });
 
     initialize();
 
