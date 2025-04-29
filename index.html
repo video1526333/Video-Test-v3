@@ -12,6 +12,8 @@
     <meta name="theme-color" content="#1e1e1e">
     <!-- Add HLS.js for m3u8 playback -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Add Clappr as an alternative m3u8 player -->
+    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
 </head>
 <body>
 
@@ -75,7 +77,10 @@
         <div class="video-modal-content">
             <span class="close-button">&times;</span>
             <div class="video-player-container">
-                <video id="videoPlayer" controls></video>
+                <!-- Clappr player will be injected here -->
+                <div id="clapprPlayer" style="width:100%; height:100%;"></div>
+                <!-- Fallback video element if needed -->
+                <video id="videoPlayer" controls style="display:none;"></video>
             </div>
             <div class="video-title-container">
                 <h3 id="playingTitle">Now Playing</h3>
