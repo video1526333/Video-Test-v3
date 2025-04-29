@@ -93,12 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayerModal = document.getElementById('videoPlayerModal');
     const closeVideoPlayerButton = videoPlayerModal.querySelector('.close-button');
     const videoPlayer = document.getElementById('videoPlayer');
+    // Debug: log native video element events
+    videoPlayer.addEventListener('play', () => console.log('[VIDEO] play event, time:', videoPlayer.currentTime));
+    videoPlayer.addEventListener('pause', () => console.log('[VIDEO] pause event, time:', videoPlayer.currentTime));
+    videoPlayer.addEventListener('waiting', () => console.log('[VIDEO] waiting (buffering) at', videoPlayer.currentTime));
+    videoPlayer.addEventListener('stalled', () => console.log('[VIDEO] stalled at', videoPlayer.currentTime));
     const playingTitle = document.getElementById('playingTitle');
     
-    // HLS player instance
-    let hlsPlayer = null;
-    // Clappr player instance
-    let clapprPlayer = null;
     // Video.js player instance
     let videojsPlayer = null;
 
@@ -442,9 +443,9 @@ document.addEventListener('DOMContentLoaded', () => {
          modalDescription.innerHTML = video.vod_content || 'No description available.';
 
          // Reset the video player
-         if (hlsPlayer) {
-             hlsPlayer.destroy();
-             hlsPlayer = null;
+         if (videojsPlayer) {
+             videojsPlayer.dispose();
+             videojsPlayer = null;
          }
 
          // Parse and display episodes
@@ -573,49 +574,58 @@ document.addEventListener('DOMContentLoaded', () => {
      
      // Function to play m3u8 videos
      function playM3u8Video(url, linkElement) {
-         // Reset all active statuses
+         // Reset active statuses
          const allLinks = modalEpisodes.querySelectorAll('a');
          allLinks.forEach(link => link.classList.remove('active'));
-         
-         // Set this link as active
          if (linkElement) {
              linkElement.classList.add('active');
-             // Update the playing title
              playingTitle.textContent = `Now Playing: ${linkElement.dataset.name}`;
          }
-     
-         // Open the video player modal
+         // Open video player modal
          videoPlayerModal.classList.add('open');
 
-         // --- Clappr m3u8 playback ---
-         // Destroy previous Clappr instance if any
-         if (clapprPlayer) {
-             clapprPlayer.destroy();
-             clapprPlayer = null;
-         }
-         // Clear and show Clappr container
-         const clapprContainer = document.getElementById('clapprPlayer');
-         clapprContainer.innerHTML = '';
-         clapprContainer.style.display = 'block';
-         // Hide native video element
-         videoPlayer.style.display = 'none';
+         // Clean up any previous players
+         if (videojsPlayer) { videojsPlayer.dispose(); videojsPlayer = null; }
+         if (hlsPlayer)    { hlsPlayer.destroy();    hlsPlayer = null; }
+         videoPlayer.style.display = 'block';
 
-         // Initialize Clappr player for HLS streams
-         clapprPlayer = new Clappr.Player({
-             source: url,
-             parentId: '#clapprPlayer',
-             mimeType: 'application/x-mpegURL',
-             width: '100%',
-             height: '100%',
-             autoPlay: false,   // we'll play manually once buffer is ready
-         });
-         // Once buffer is full, start playback
-         clapprPlayer.listenToOnce(clapprPlayer.core, Clappr.Events.PLAYBACK_BUFFERFULL, () => {
-             console.log('[Clappr] BUFFERFULL, calling play()');
-             clapprPlayer.play();
-         });
-         // Playback handled by Clappr, skip native fallback
-         return;
+         // Use HLS.js for playback
+         if (Hls.isSupported()) {
+             hlsPlayer = new Hls({ maxBufferHole: 0.5, maxMaxBufferLength: 60, debug: false });
+             hlsPlayer.attachMedia(videoPlayer);
+             // Debug: HLS.js internal events
+             hlsPlayer.on(Hls.Events.FRAG_BUFFERED, (evt, data) => console.log('[HLS] FRAG_BUFFERED @', data.stats.end, 'mediaTime')); 
+             hlsPlayer.on(Hls.Events.BUFFER_APPENDING, (evt, data) => console.log('[HLS] BUFFER_APPENDING', data));
+             hlsPlayer.on(Hls.Events.LEVEL_LOADED, (evt, data) => console.log('[HLS] LEVEL_LOADED', data.details));
+             hlsPlayer.on(Hls.Events.LEVEL_SWITCHED, (evt, data) => console.log('[HLS] LEVEL_SWITCHED to level', data.level));
+             hlsPlayer.on(Hls.Events.BUFFER_FLUSHED, (evt, data) => console.log('[HLS] BUFFER_FLUSHED'));                
+             hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
+                 // Skip small buffer hole errors
+                 if (data.type === Hls.ErrorTypes.MEDIA_ERROR && data.details === Hls.ErrorDetails.BUFFER_SEEK_OVER_HOLE && !data.fatal) {
+                     return;
+                 }
+                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                     hlsPlayer.startLoad();
+                 } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                     hlsPlayer.recoverMediaError();
+                 } else if (data.fatal) {
+                     hlsPlayer.destroy();
+                 }
+             });
+             hlsPlayer.loadSource(url);
+             // Only start playback once the first media fragment is buffered
+             hlsPlayer.once(Hls.Events.FRAG_BUFFERED, (event, data) => {
+                 console.log(`[HLS] FRAG_BUFFERED (sn: ${data.frag.sn}), calling play()`);
+                 videoPlayer.play().catch(e => console.warn('Auto-play prevented:', e));
+             });
+         } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+             videoPlayer.src = url;
+             videoPlayer.addEventListener('loadedmetadata', function() {
+                 videoPlayer.play().catch(e => console.warn('Auto-play prevented:', e));
+             });
+         } else {
+             showToast('Sorry, your browser does not support HLS streaming.', 'error');
+         }
      }
 
     // --- Event Listeners ---
@@ -695,9 +705,9 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalButton.addEventListener('click', () => {
         modal.classList.remove('open');
         // Stop the video if playing
-        if (hlsPlayer) {
-            hlsPlayer.destroy();
-            hlsPlayer = null;
+        if (videojsPlayer) {
+            videojsPlayer.dispose();
+            videojsPlayer = null;
         }
         videoPlayer.pause();
         
@@ -715,9 +725,9 @@ document.addEventListener('DOMContentLoaded', () => {
     closeVideoPlayerButton.addEventListener('click', () => {
         videoPlayerModal.classList.remove('open');
         // Stop the video
-        if (hlsPlayer) {
-            hlsPlayer.destroy();
-            hlsPlayer = null;
+        if (videojsPlayer) {
+            videojsPlayer.dispose();
+            videojsPlayer = null;
         }
         videoPlayer.pause();
     });
@@ -751,9 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target === videoPlayerModal) { // Close if clicked outside the video player modal content
             videoPlayerModal.classList.remove('open');
             // Stop the video
-            if (hlsPlayer) {
-                hlsPlayer.destroy();
-                hlsPlayer = null;
+            if (videojsPlayer) {
+                videojsPlayer.dispose();
+                videojsPlayer = null;
             }
             videoPlayer.pause();
         }
