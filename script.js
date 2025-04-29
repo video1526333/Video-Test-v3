@@ -3,13 +3,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiUrl = 'https://api.yzzy-api.com/inc/api_mac10.php';
     // Cors proxies options (if one fails, will try the next)
     const corsProxies = [
-        'https://cors-proxy.elfsight.com/', // Option 1
-        'https://corsproxy.io/?', // Option 2
-        'https://cors.eu.org/', // Option 3
-        'https://thingproxy.freeboard.io/fetch/?url=', // Option 4
-        'https://api.allorigins.win/raw?url=', // Option 5
-        'https://api.codetabs.com/v1/proxy?quest=', // Option 6
-        '' // Direct API (may not work due to CORS)
+        'https://cors-proxy.elfsight.com/',               // Option 1
+        'https://corsproxy.io/?',                         // Option 2
+        'https://cors.eu.org/',                           // Option 3
+        'https://thingproxy.freeboard.io/fetch/?url=',    // Option 4
+        'https://api.allorigins.win/raw?url=',            // Option 5
+        'https://api.allorigins.cf/raw?url=',             // Option 6
+        'https://api.allorigins.tk/raw?url=',             // Option 7
+        'https://api.codetabs.com/v1/proxy?quest=',       // Option 8
+        'https://yacdn.org/proxy/',                       // Option 9
+        'https://cors.bridged.cc/',                       // Option 10
+        'https://cors.sho.sh/',                           // Option 11
+        'https://cors.ironproxy.xyz/',                    // Option 12
+        'https://norobe-cors-anywhere.herokuapp.com/',    // Option 13
+        'https://corsproxy.github.io/?url=',              // Option 14
+        ''                                                // Direct API (may not work due to CORS)
     ];
     let currentProxyIndex = 0; // Start with the first proxy
     const categoryList = document.getElementById('categoryList');
