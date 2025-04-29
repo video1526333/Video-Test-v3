@@ -605,14 +605,11 @@ document.addEventListener('DOMContentLoaded', () => {
              mimeType: 'application/x-mpegURL',
              width: '100%',
              height: '100%',
-             autoPlay: false,   // we'll play manually to avoid loop
+             autoPlay: false,   // we'll play manually once buffer is ready
          });
-         // Debug: listen for play/pause events
-         clapprPlayer.listenTo(clapprPlayer.core, Clappr.Events.PLAYBACK_PLAY, () => console.log('[Clappr] PLAY event'));
-         clapprPlayer.listenTo(clapprPlayer.core, Clappr.Events.PLAYBACK_PAUSE, () => console.log('[Clappr] PAUSE event'));
-         // Start playback once ready
-         clapprPlayer.once(Clappr.Events.PLAYER_READY, () => {
-             console.log('[Clappr] PLAYER_READY, calling play()');
+         // Once buffer is full, start playback
+         clapprPlayer.listenToOnce(clapprPlayer.core, Clappr.Events.PLAYBACK_BUFFERFULL, () => {
+             console.log('[Clappr] BUFFERFULL, calling play()');
              clapprPlayer.play();
          });
          // Playback handled by Clappr, skip native fallback
