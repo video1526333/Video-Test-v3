@@ -99,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let hlsPlayer = null;
     // Clappr player instance
     let clapprPlayer = null;
+    // Video.js player instance
+    let videojsPlayer = null;
 
     let currentPage = 1;
     let currentCategory = ''; // Store category ID
