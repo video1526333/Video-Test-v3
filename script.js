@@ -93,15 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayerModal = document.getElementById('videoPlayerModal');
     const closeVideoPlayerButton = videoPlayerModal.querySelector('.close-button');
     const videoPlayer = document.getElementById('videoPlayer');
+    const playingTitle = document.getElementById('playingTitle');
     // Debug: log native video element events
     videoPlayer.addEventListener('play', () => console.log('[VIDEO] play event, time:', videoPlayer.currentTime));
     videoPlayer.addEventListener('pause', () => console.log('[VIDEO] pause event, time:', videoPlayer.currentTime));
     videoPlayer.addEventListener('waiting', () => console.log('[VIDEO] waiting (buffering) at', videoPlayer.currentTime));
     videoPlayer.addEventListener('stalled', () => console.log('[VIDEO] stalled at', videoPlayer.currentTime));
-    const playingTitle = document.getElementById('playingTitle');
-    
-    // Video.js player instance
     let videojsPlayer = null;
+    let hlsPlayer = null;
 
     let currentPage = 1;
     let currentCategory = ''; // Store category ID
@@ -710,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
             videojsPlayer = null;
         }
         videoPlayer.pause();
-        
+        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
         // Reset page title and URL when closing the modal
         document.title = 'Video Portal';
         // Only update if browser supports history API
@@ -730,6 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
             videojsPlayer = null;
         }
         videoPlayer.pause();
+        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
     });
 
     // Share button click
@@ -766,6 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 videojsPlayer = null;
             }
             videoPlayer.pause();
+            if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
         }
         if (event.target === settingsModal) { // Close settings modal if clicked outside
             settingsModal.classList.remove('open');
