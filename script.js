@@ -32,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const shareLinkInput = document.getElementById('shareLink');
     const copyLinkButton = document.getElementById('copyLinkButton');
     
+    // Watchlist elements
+    const addToWatchListButton = document.getElementById('addToWatchListButton');
+    const mobileWatchListButton = document.getElementById('mobileWatchListButton');
+    
     // Current video ID (for sharing)
     let currentVideoId = null;
     // Watch list storage in localStorage
