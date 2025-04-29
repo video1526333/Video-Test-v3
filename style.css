@@ -372,7 +372,7 @@ nav ul li.active { background: var(--accent); color: var(--bg); }
         padding-right: 0; /* Remove padding */
         margin-top: 10px; /* Add space above search */
         width: 100%; /* Make search full width */
-        padding-left: 20px;
+        padding-left: 0px;
     }
 
     #videoGrid {

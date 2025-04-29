@@ -841,24 +841,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initial Load ---
     async function initialize() {
         await loadCategories(); // Load categories first
-        // Default display watch list if any, otherwise default category
-        if (watchList.length > 0) {
-            const watchLi = categoryList.querySelector('li[data-id="watchlist"]');
-            if (watchLi) {
-                watchLi.classList.add('active');
-            }
-            loadWatchList(); // Load initial watch list by default
-        } else {
-            const defaultLi = categoryList.querySelector('li[data-id="' + defaultCategoryId + '"]');
-            if (defaultLi) {
-                defaultLi.classList.add('active');
-            }
-            loadVideos(1, defaultCategoryId); // Load initial videos with default category ID
+        // Default load: show watch list
+        const watchLi = categoryList.querySelector('li[data-id="watchlist"]');
+        if (watchLi) {
+            watchLi.classList.add('active');
         }
-        
+        loadWatchList();
+
         // Check if user is already authenticated
         checkStoredPassword();
-        
         // Check if we should load a specific video (from shared link)
         checkForSharedVideo();
     }
