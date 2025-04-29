@@ -3,20 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiUrl = 'https://api.yzzy-api.com/inc/api_mac10.php';
     // Cors proxies options (if one fails, will try the next)
     const corsProxies = [
-        'https://cors-proxy.elfsight.com/',               // Option 1
-        'https://corsproxy.io/?',                         // Option 2
-        'https://cors.eu.org/',                           // Option 3
-        'https://thingproxy.freeboard.io/fetch/?url=',    // Option 4
-        'https://api.allorigins.win/raw?url=',            // Option 5
-        'https://api.allorigins.cf/raw?url=',             // Option 6
-        'https://api.allorigins.tk/raw?url=',             // Option 7
-        'https://api.codetabs.com/v1/proxy?quest=',       // Option 8
-        'https://yacdn.org/proxy/',                       // Option 9
-        'https://cors.bridged.cc/',                       // Option 10
-        'https://cors.sho.sh/',                           // Option 11
-        'https://cors.ironproxy.xyz/',                    // Option 12
-        'https://norobe-cors-anywhere.herokuapp.com/',    // Option 13
-        'https://corsproxy.github.io/?url=',              // Option 14
+        'https://corsproxy.io/?',                         // Working proxy - first option
+        'https://cors.eu.org/',                           // Option 2
+        'https://thingproxy.freeboard.io/fetch/?url=',    // Option 3
+        'https://api.allorigins.win/raw?url=',            // Option 4
+        'https://api.allorigins.cf/raw?url=',             // Option 5
+        'https://api.allorigins.tk/raw?url=',             // Option 6
+        'https://api.codetabs.com/v1/proxy?quest=',       // Option 7
+        'https://yacdn.org/proxy/',                       // Option 8
+        'https://cors.bridged.cc/',                       // Option 9
+        'https://cors.sho.sh/',                           // Option 10
+        'https://cors.ironproxy.xyz/',                    // Option 11
+        'https://norobe-cors-anywhere.herokuapp.com/',    // Option 12
+        'https://corsproxy.github.io/?url=',              // Option 13
+        'https://cors-proxy.elfsight.com/',               // Option 14 (failing)
         ''                                                // Direct API (may not work due to CORS)
     ];
     let currentProxyIndex = 0; // Start with the first proxy
@@ -591,7 +591,11 @@ document.addEventListener('DOMContentLoaded', () => {
              }
              
              // Create a new instance
-             hlsPlayer = new Hls();
+             hlsPlayer = new Hls({
+                 maxBufferHole: 0.5,       // Increase from default 0.1s to 0.5s
+                 maxMaxBufferLength: 60,   // Increase buffer size for smoother playback
+                 debug: false              // Silence internal HLS.js debug logs
+             });
              
              // Bind hls player to video element
              hlsPlayer.attachMedia(videoPlayer);
@@ -601,6 +605,13 @@ document.addEventListener('DOMContentLoaded', () => {
              
              // Handle errors
              hlsPlayer.on(Hls.Events.ERROR, function(event, data) {
+                 // Skip logging for common non-fatal buffer holes
+                 if (data.type === 'mediaError' && 
+                     data.details === 'bufferSeekOverHole' && 
+                     !data.fatal) {
+                     return; // Silently handle non-fatal buffer holes
+                 }
+                 
                  console.error('HLS Player Error:', data);
                  if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
                      console.error('Network error encountered, trying to recover');
