@@ -582,59 +582,32 @@ document.addEventListener('DOMContentLoaded', () => {
      
          // Open the video player modal
          videoPlayerModal.classList.add('open');
-     
-         // Check if HLS.js is supported in this browser
-         if (Hls.isSupported()) {
-             // Destroy previous instance if it exists
-             if (hlsPlayer) {
-                 hlsPlayer.destroy();
-             }
-             
-             // Create a new instance
-             hlsPlayer = new Hls({
-                 maxBufferHole: 0.5,       // Increase from default 0.1s to 0.5s
-                 maxMaxBufferLength: 60,   // Increase buffer size for smoother playback
-                 debug: false              // Silence internal HLS.js debug logs
-             });
-             
-             // Bind hls player to video element
-             hlsPlayer.attachMedia(videoPlayer);
-             
-             // Load the m3u8 URL
-             hlsPlayer.loadSource(url);
-             
-             // Handle errors
-             hlsPlayer.on(Hls.Events.ERROR, function(event, data) {
-                 // Skip logging for common non-fatal buffer holes
-                 if (data.type === 'mediaError' && 
-                     data.details === 'bufferSeekOverHole' && 
-                     !data.fatal) {
-                     return; // Silently handle non-fatal buffer holes
-                 }
-                 
-                 console.error('HLS Player Error:', data);
-                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                     console.error('Network error encountered, trying to recover');
-                     hlsPlayer.startLoad();
-                 } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                     console.error('Media error encountered, trying to recover');
-                     hlsPlayer.recoverMediaError();
-                 } else if (data.fatal) {
-                     console.error('Fatal error, cannot recover');
-                     hlsPlayer.destroy();
-                 }
-             });
-             
-             // When loaded, play the video
-             hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
-                 videoPlayer.play().catch(e => {
-                     console.warn('Auto-play was prevented by browser:', e);
-                     // Show a play button or message if needed
-                 });
-             });
-         } 
+
+         // --- Clappr m3u8 playback ---
+         // Destroy previous Clappr instance if any
+         if (clapprPlayer) {
+             clapprPlayer.destroy();
+             clapprPlayer = null;
+         }
+         // Clear and show Clappr container
+         const clapprContainer = document.getElementById('clapprPlayer');
+         clapprContainer.innerHTML = '';
+         clapprContainer.style.display = 'block';
+         // Hide native video element
+         videoPlayer.style.display = 'none';
+
+         // Initialize Clappr player for HLS streams
+         clapprPlayer = new Clappr.Player({
+             source: url,
+             parentId: '#clapprPlayer',
+             mimeType: 'application/x-mpegURL',
+             width: '100%',
+             height: '100%',
+             autoPlay: true,
+         });
+
          // For browsers that natively support HLS (Safari)
-         else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+         if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
              videoPlayer.src = url;
              videoPlayer.addEventListener('loadedmetadata', function() {
                  videoPlayer.play().catch(e => {
