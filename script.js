@@ -602,21 +602,15 @@ document.addEventListener('DOMContentLoaded', () => {
              // Handle errors
              hlsPlayer.on(Hls.Events.ERROR, function(event, data) {
                  console.error('HLS Player Error:', data);
-                 if (data.fatal) {
-                     switch(data.type) {
-                         case Hls.ErrorTypes.NETWORK_ERROR:
-                             console.error('Fatal network error encountered, trying to recover');
-                             hlsPlayer.startLoad();
-                             break;
-                         case Hls.ErrorTypes.MEDIA_ERROR:
-                             console.error('Fatal media error encountered, trying to recover');
-                             hlsPlayer.recoverMediaError();
-                             break;
-                         default:
-                             console.error('Fatal error, cannot recover');
-                             hlsPlayer.destroy();
-                             break;
-                     }
+                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                     console.error('Network error encountered, trying to recover');
+                     hlsPlayer.startLoad();
+                 } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                     console.error('Media error encountered, trying to recover');
+                     hlsPlayer.recoverMediaError();
+                 } else if (data.fatal) {
+                     console.error('Fatal error, cannot recover');
+                     hlsPlayer.destroy();
                  }
              });
              
