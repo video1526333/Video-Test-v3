@@ -94,11 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeVideoPlayerButton = videoPlayerModal.querySelector('.close-button');
     const videoPlayer = document.getElementById('videoPlayer');
     const playingTitle = document.getElementById('playingTitle');
-    // Debug: log native video element events
-    videoPlayer.addEventListener('play', () => console.log('[VIDEO] play event, time:', videoPlayer.currentTime));
-    videoPlayer.addEventListener('pause', () => console.log('[VIDEO] pause event, time:', videoPlayer.currentTime));
-    videoPlayer.addEventListener('waiting', () => console.log('[VIDEO] waiting (buffering) at', videoPlayer.currentTime));
-    videoPlayer.addEventListener('stalled', () => console.log('[VIDEO] stalled at', videoPlayer.currentTime));
     let videojsPlayer = null;
     let hlsPlayer = null;
 
@@ -580,51 +575,23 @@ document.addEventListener('DOMContentLoaded', () => {
              linkElement.classList.add('active');
              playingTitle.textContent = `Now Playing: ${linkElement.dataset.name}`;
          }
-         // Open video player modal
+         // Show player modal
          videoPlayerModal.classList.add('open');
 
-         // Clean up any previous players
-         if (videojsPlayer) { videojsPlayer.dispose(); videojsPlayer = null; }
-         if (hlsPlayer)    { hlsPlayer.destroy();    hlsPlayer = null; }
+         // Clean up any previous HLS instance
+         if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
          videoPlayer.style.display = 'block';
 
-         // Use HLS.js for playback
+         // Simplified HLS playback
          if (Hls.isSupported()) {
-             hlsPlayer = new Hls({ maxBufferHole: 0.5, maxMaxBufferLength: 60, debug: false });
-             hlsPlayer.attachMedia(videoPlayer);
-             // Debug: HLS.js internal events
-             hlsPlayer.on(Hls.Events.FRAG_BUFFERED, (evt, data) => console.log('[HLS] FRAG_BUFFERED @', data.stats.end, 'mediaTime')); 
-             hlsPlayer.on(Hls.Events.BUFFER_APPENDING, (evt, data) => console.log('[HLS] BUFFER_APPENDING', data));
-             hlsPlayer.on(Hls.Events.LEVEL_LOADED, (evt, data) => console.log('[HLS] LEVEL_LOADED', data.details));
-             hlsPlayer.on(Hls.Events.LEVEL_SWITCHED, (evt, data) => console.log('[HLS] LEVEL_SWITCHED to level', data.level));
-             hlsPlayer.on(Hls.Events.BUFFER_FLUSHED, (evt, data) => console.log('[HLS] BUFFER_FLUSHED'));                
-             hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
-                 // Skip small buffer hole errors
-                 if (data.type === Hls.ErrorTypes.MEDIA_ERROR && data.details === Hls.ErrorDetails.BUFFER_SEEK_OVER_HOLE && !data.fatal) {
-                     return;
-                 }
-                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                     hlsPlayer.startLoad();
-                 } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                     hlsPlayer.recoverMediaError();
-                 } else if (data.fatal) {
-                     hlsPlayer.destroy();
-                 }
-             });
+             hlsPlayer = new Hls();
              hlsPlayer.loadSource(url);
-             // Start playback once the manifest has been parsed
-             hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                 console.log('[HLS] MANIFEST_PARSED, calling play()');
-                 videoPlayer.play().catch(e => console.warn('Auto-play prevented:', e));
-             });
-         } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-             videoPlayer.src = url;
-             videoPlayer.addEventListener('loadedmetadata', function() {
-                 videoPlayer.play().catch(e => console.warn('Auto-play prevented:', e));
-             });
+             hlsPlayer.attachMedia(videoPlayer);
          } else {
-             showToast('Sorry, your browser does not support HLS streaming.', 'error');
+             // Native HLS (Safari)
+             videoPlayer.src = url;
          }
+         videoPlayer.play().catch(e => console.error('Playback error:', e));
      }
 
     // --- Event Listeners ---
