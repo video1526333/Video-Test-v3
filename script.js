@@ -97,6 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // HLS player instance
     let hlsPlayer = null;
+    // Clappr player instance
+    let clapprPlayer = null;
 
     let currentPage = 1;
     let currentCategory = ''; // Store category ID
@@ -606,20 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
              autoPlay: true,
          });
 
-         // For browsers that natively support HLS (Safari)
-         if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-             videoPlayer.src = url;
-             videoPlayer.addEventListener('loadedmetadata', function() {
-                 videoPlayer.play().catch(e => {
-                     console.warn('Auto-play was prevented by browser:', e);
-                 });
-             });
-         } 
-         // Fallback for browsers without HLS support
-         else {
-             console.error('HLS is not supported in this browser and no fallback is available');
-             showToast('Sorry, your browser does not support HLS streaming. Please try Chrome or Safari.', 'error');
-         }
+         // Playback handled by Clappr, skip native fallback
+         return;
      }
 
     // --- Event Listeners ---
