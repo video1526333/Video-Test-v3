@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Carefully review the existing code. Look for logic errors, syntax issues, and inefficient or problematic loops. Explain your reasoning step by step and suggest improvements where possible.
