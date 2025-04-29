@@ -612,9 +612,9 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
              });
              hlsPlayer.loadSource(url);
-             // Only start playback once the first media fragment is buffered
-             hlsPlayer.once(Hls.Events.FRAG_BUFFERED, (event, data) => {
-                 console.log(`[HLS] FRAG_BUFFERED (sn: ${data.frag.sn}), calling play()`);
+             // Start playback once the manifest has been parsed
+             hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+                 console.log('[HLS] MANIFEST_PARSED, calling play()');
                  videoPlayer.play().catch(e => console.warn('Auto-play prevented:', e));
              });
          } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
